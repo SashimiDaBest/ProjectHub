@@ -1,13 +1,13 @@
 package main
 
 import (
-    "fmt"
+    // "fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 	"projecthub-backend/auth"
     "log"
-    // "projecthub-backend/db"
-    // "projecthub-backend/handlers"
+    "projecthub-backend/db"
+    "projecthub-backend/handlers"
     // "projecthub-backend/models"
 )
 
@@ -29,42 +29,27 @@ func enableCORS(next http.Handler) http.Handler {
 
 
 func main() {
-	router := mux.NewRouter()
-
-	// Add routes
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    // connect to db
+    db.Connect()
+    defer db.Pool.Close()
+		
+	r := mux.NewRouter()
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Welcome to ProjectHub Backend"))
 	}).Methods("GET")
 
-	router.HandleFunc("/login", auth.LoginHandler).Methods("POST")
-	router.HandleFunc("/protected", auth.ProtectedHandler).Methods("GET")
+	r.HandleFunc("/login", auth.LoginHandler).Methods("POST")
+	r.HandleFunc("/protected", auth.ProtectedHandler).Methods("GET")
 
-	// Wrap router with CORS middleware
-	handler := enableCORS(router)
+    r.HandleFunc("/clients", handlers.CreateClientHandler).Methods("POST")
+    r.HandleFunc("/rooms", handlers.CreateRoomHandler).Methods("POST")
+    r.HandleFunc("/messages", handlers.SendMessageHandler).Methods("POST")
+    r.HandleFunc("/offline", handlers.GetOfflineMessagesHandler).Methods("GET")
+	r.HandleFunc("/ws", handlers.WebSocketHandler)
+    r.HandleFunc("/rooms", handlers.CreateRoomHandler).Methods("POST")
 
-	fmt.Println("Starting the server on http://localhost:8000")
+	handler := enableCORS(r)
+
+	log.Println("Starting the server on http://localhost:8000")
 	log.Fatal(http.ListenAndServe("localhost:8000", handler))
-
-	/*
-    // Connect to database
-    db.Connect()
-    defer db.Pool.Close()
-
-    // Test: create a user
-    user := models.User{Name: "Alice", Email: "alice@example.com"}
-    if err := handlers.CreateUser(user); err != nil {
-        log.Fatalf("Failed to create user: %v", err)
-    }
-
-    // Test: list users
-    users, err := handlers.GetUsers()
-    if err != nil {
-        log.Fatalf("Failed to get users: %v", err)
-    }
-
-    fmt.Println("Users in database:")
-    for _, u := range users {
-        fmt.Printf("%d: %s (%s)\n", u.ID, u.Name, u.Email)
-    }
-	*/
 }

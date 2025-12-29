@@ -2,33 +2,23 @@ package handlers
 
 import (
     "context"
-    // "fmt"
+    "encoding/json"
+    "net/http"
     "projecthub-backend/db"
-    "projecthub-backend/models"
 )
 
-func CreateUser(user models.User) error {
-    _, err := db.Pool.Exec(context.Background(),
-        "INSERT INTO users (name, email) VALUES ($1, $2)",
-        user.Name, user.Email)
-    return err
-}
+func CreateClientHandler(w http.ResponseWriter, r *http.Request) {
+    type request struct { ID string `json:"id"` }
+    var req request
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
 
-func GetUsers() ([]models.User, error) {
-    rows, err := db.Pool.Query(context.Background(),
-        "SELECT id, name, email FROM users")
+    _, err := db.Pool.Exec(context.Background(), "INSERT INTO clients(id) VALUES($1)", req.ID)
     if err != nil {
-        return nil, err
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
     }
-    defer rows.Close()
-
-    var users []models.User
-    for rows.Next() {
-        var u models.User
-        if err := rows.Scan(&u.ID, &u.Name, &u.Email); err != nil {
-            return nil, err
-        }
-        users = append(users, u)
-    }
-    return users, nil
+    w.WriteHeader(http.StatusCreated)
 }

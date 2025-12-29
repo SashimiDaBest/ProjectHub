@@ -5,9 +5,12 @@ import {
   Box,
   Stack,
  } from "@mui/material";
+import { useNavigate } from "react-router";
 
 
 export function Welcome() {
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -26,9 +29,9 @@ export function Welcome() {
 
       if (response.ok) {
         // Successfully logged in, data.token contains JWT
-        console.log("JWT Token:", data.token);
         setMessage("Login successful!");
         localStorage.setItem("token", data.token);
+        navigate("/dashboard");
       } else {
         setMessage(data || "Login failed");
       }
